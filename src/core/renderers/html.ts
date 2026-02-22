@@ -1,8 +1,8 @@
 import type { IComponent } from "../types/component.js";
-import {
-	type CommonProps,
-	type InputProps,
-	type IntrinsicElements,
+import type {
+	CommonProps,
+	InputProps,
+	IntrinsicElements,
 } from "../types/html.js";
 
 export class HTMLRenderer {
@@ -38,8 +38,7 @@ export class HTMLRenderer {
 				this.replaceNode(index, newNode);
 				this.oldRoot = this.cloneTree(tree);
 				this.nodeMap.forEach((e, k) => {
-					// clean map
-					if (!this.findByIndex(this.oldRoot!, k)) {
+					if (!this.oldRoot || !this.findByIndex(this.oldRoot, k)) {
 						this.nodeMap.delete(k);
 					}
 				});
@@ -176,7 +175,7 @@ export class HTMLRenderer {
 		node: IComponent<keyof IntrinsicElements>,
 	) {
 		if (index === "0") this.replaceRoot(node);
-		const oldNode = this.findByIndex(this.oldRoot!, index);
+		const oldNode = this.oldRoot && this.findByIndex(this.oldRoot, index);
 		if (!oldNode) return;
 
 		const domNode = this.nodeMap.get(oldNode.index);
