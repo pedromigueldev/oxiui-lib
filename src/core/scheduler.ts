@@ -1,4 +1,4 @@
-import type { DivContainer } from "./elements/AbaStateFull";
+import type { DivContainer } from "./elements";
 import { resetCursor } from "./renderer";
 import type { IComponent } from "./types/component";
 import type { IntrinsicElements } from "./types/html";
@@ -64,7 +64,9 @@ function performRender(stateId: string, readers: Set<string>) {
 	resetCursor();
 	app.body();
 	renderCallback(stateId, readers, app as IComponent<keyof IntrinsicElements>);
-	postRenderQueue.forEach((fn) => fn());
+	postRenderQueue.forEach((fn) => {
+		fn();
+	});
 	postRenderQueue.length = 0;
 	clearCursors(app as IComponent<keyof IntrinsicElements>);
 }
@@ -105,7 +107,9 @@ export function startImmediateMode() {
 		resetCursor();
 		app.body();
 		renderCallback?.("", new Set(), app as IComponent<keyof IntrinsicElements>);
-		postRenderQueue.forEach((fn) => fn());
+		postRenderQueue.forEach((fn) => {
+			fn();
+		});
 		postRenderQueue.length = 0;
 		clearCursors(app as IComponent<keyof IntrinsicElements>);
 		frameId = requestAnimationFrame(loop);
