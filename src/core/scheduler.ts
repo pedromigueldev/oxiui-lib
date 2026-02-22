@@ -1,4 +1,4 @@
-import type { DivContainer } from "./elements";
+import type { ContainerState } from "./elements";
 import { resetCursor } from "./renderer";
 import type { IComponent } from "./types/component";
 import type { IntrinsicElements } from "./types/html";
@@ -10,7 +10,7 @@ type RenderCallback = (
 ) => void;
 
 let running = false;
-let app: DivContainer | null = null;
+let app: ContainerState | null = null;
 let renderCallback: RenderCallback | null = null;
 const postRenderQueue: (() => void)[] = [];
 const resetTree = () => {
@@ -20,7 +20,7 @@ const resetTree = () => {
 };
 
 export function initScheduler(
-	App: new () => DivContainer,
+	App: new () => ContainerState,
 	renderer: RenderCallback,
 ) {
 	app = new App();
