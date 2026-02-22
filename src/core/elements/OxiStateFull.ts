@@ -1,3 +1,3 @@
-import { intrinsic } from "./OxiComponent.js";
+import { intrinsicState } from "./OxiComponent.js";
 
-export class DivContainer extends intrinsic("div") {}
+export class ContainerState extends intrinsicState("div") {}
