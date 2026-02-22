@@ -4,129 +4,140 @@ import { close, current, open } from "../tree.js";
 import type { IComponent, StyleProp } from "../types/component.js";
 import type { CommonProps, IntrinsicElements } from "../types/html.js";
 
-export abstract class OxiComponent<
-  K extends keyof IntrinsicElements,
-> implements IComponent<K> {
-  #__states = new Map<string | symbol, Signal<any>>();
+export class OxiComponent<K extends keyof IntrinsicElements>
+	implements IComponent<K>
+{
+	#__states = new Map<string | symbol, Signal<unknown>>();
+	type: K;
+	props: IntrinsicElements[K];
+	up?: IComponent<keyof IntrinsicElements>;
+	down: IComponent<keyof IntrinsicElements>[] = [];
+	cursors: Set<string> = new Set();
+	index: string;
+	view?: (() => void) | undefined;
 
-  type: K;
-  props: IntrinsicElements[K];
-  up?: IComponent<keyof IntrinsicElements>;
-  down: IComponent<keyof IntrinsicElements>[] = [];
-  cursors: Set<string> = new Set();
-  index: string;
-  view?: (() => void) | undefined;
+	constructor(type: K, props?: IntrinsicElements[K]) {
+		const parent = current() as IComponent<keyof IntrinsicElements> | undefined;
 
-  constructor(type: K, props?: IntrinsicElements[K]) {
-    const parent = current() as IComponent<keyof IntrinsicElements> | undefined;
+		this.type = type;
+		this.props = props ?? ({} as IntrinsicElements[K]);
+		this.up = parent;
 
-    this.type = type;
-    this.props = props ?? ({} as IntrinsicElements[K]);
-    this.up = parent;
+		const position = parent ? parent.down.length : 0;
+		this.index = parent ? `${parent.index}.${position}` : "0";
 
-    const position = parent ? parent.down.length : 0;
-    this.index = parent ? `${parent.index}.${position}` : "0";
+		parent?.down.push(this as IComponent<K>);
+	}
 
-    parent?.down.push(this as IComponent<K>);
+	body(fn?: (component: this) => void) {
+		open(this);
 
-    return new Proxy(this, {
-      get: (target, prop, receiver) => {
-        if (prop.toString().startsWith("$")) {
-          let signal = target.#__states.get(prop);
+		if (this.view) {
+			this.view();
+		} else {
+			fn?.(this);
+		}
 
-          if (!signal) {
-            open(target);
-            signal = new Signal(Reflect.get(target, prop, receiver));
-            target.#__states.set(prop, signal);
-            close();
-          }
+		close();
+		return this;
+	}
 
-          return signal.value;
-        }
+	onAppear(fn: (component: this) => void) {
+		open(this);
+		scheduleEffect(() => fn(this));
+		close();
+		return this;
+	}
 
-        return Reflect.get(target, prop, receiver);
-      },
+	withProps<T extends Partial<IntrinsicElements[K]>>(newProps: T) {
+		open(this);
+		this.props = { ...this.props, ...newProps };
+		close();
+		return this;
+	}
 
-      set: (target, prop, value, receiver) => {
-        if (prop.toString().startsWith("$")) {
-          let signal = target.#__states.get(prop);
+	withStyle(style: StyleProp<IntrinsicElements[K]>) {
+		open(this);
 
-          open(target);
-          if (!signal) {
-            signal = new Signal(value);
-            target.#__states.set(prop, signal);
-          } else {
-            signal.value = value;
-          }
-          close();
-          return true;
-        }
+		const currentStyle = (this.props as CommonProps).style;
 
-        return Reflect.set(target, prop, value, receiver);
-      },
-    });
-  }
+		if (typeof style === "object" && typeof currentStyle === "object") {
+			this.props = {
+				...this.props,
+				style: { ...currentStyle, ...style },
+			};
+		} else {
+			this.props = {
+				...this.props,
+				style,
+			};
+		}
 
-  body(fn?: (component: this) => void) {
-    open(this);
+		close();
+		return this;
+	}
 
-    if (this.view) {
-      this.view();
-    } else {
-      fn?.(this);
-    }
+	withExtension(extension: (component: this) => void): this {
+		open(this);
+		extension(this);
+		close();
+		return this;
+	}
 
-    close();
-    return this;
-  }
+	withState(): this {
+		return new Proxy(this, {
+			get(target, prop, receiver) {
+				if (typeof prop === "string" && prop.startsWith("$")) {
+					let signal = target.#__states.get(prop);
 
-  onAppear(fn: (component: this) => void) {
-    open(this);
-    scheduleEffect(() => fn(this));
-    close();
-    return this;
-  }
+					if (!signal) {
+						open(target);
+						signal = new Signal(Reflect.get(target, prop, receiver));
+						target.#__states.set(prop, signal);
+						close();
+					}
 
-  withProps<T extends Partial<IntrinsicElements[K]>>(newProps: T) {
-    open(this);
-    this.props = { ...this.props, ...newProps };
-    close();
-    return this;
-  }
+					return signal.value;
+				}
 
-  withStyle(style: StyleProp<IntrinsicElements[K]>) {
-    open(this);
+				return Reflect.get(target, prop, receiver);
+			},
 
-    const currentStyle = (this.props as CommonProps).style;
+			set(target, prop, value, receiver) {
+				if (typeof prop === "string" && prop.startsWith("$")) {
+					let signal = target.#__states.get(prop);
 
-    if (typeof style === "object" && typeof currentStyle === "object") {
-      this.props = {
-        ...this.props,
-        style: { ...currentStyle, ...style },
-      };
-    } else {
-      this.props = {
-        ...this.props,
-        style,
-      };
-    }
+					open(target);
+					if (!signal) {
+						signal = new Signal(value);
+						target.#__states.set(prop, signal);
+					} else {
+						signal.value = value;
+					}
+					close();
+					return true;
+				}
 
-    close();
-    return this;
-  }
-
-  withExtension(extension: (component: this) => void): this {
-    open(this);
-    extension(this);
-    close();
-    return this;
-  }
+				return Reflect.set(target, prop, value, receiver);
+			},
+		}) as this;
+	}
 }
 
 export function intrinsic<K extends keyof IntrinsicElements>(type: K) {
-  return class extends OxiComponent<K> {
-    constructor(props?: IntrinsicElements[K]) {
-      super(type, props);
-    }
-  };
+	return class extends OxiComponent<K> {
+		constructor(props?: IntrinsicElements[K]) {
+			super(type, props);
+		}
+	};
+}
+
+export function intrinsicState<K extends keyof IntrinsicElements>(type: K) {
+	return class extends OxiComponent<K> {
+		constructor(props?: IntrinsicElements[K]) {
+			super(type, props);
+			// biome-ignore lint: correctness/noConstructorReturn
+			return this.withState();
+		}
+	};
 }
