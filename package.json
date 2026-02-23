@@ -1,6 +1,6 @@
 {
 	"name": "oxiui-lib",
-	"version": "0.2.12",
+	"version": "0.2.13",
 	"module": "src/index.ts",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
