@@ -23,5 +23,5 @@ jobs:
 
       - run: bun install
       - run: bun run build
-
+      - run: npm whoami
       - run: npm publish
