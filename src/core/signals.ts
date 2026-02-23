@@ -27,11 +27,8 @@ export class Signal<T> {
 
 	public set value(v: T) {
 		this.state.value = v;
-		if (this.cursor) {
-			rerender(`${this.cursor}`, Signal.getReadersWithCursor(this.cursor));
-			console.log(this.cursor, current());
-		}
-
+		rerender(`${this.cursor}`, Signal.getReadersWithCursor(this.cursor));
+		console.log(this.cursor, current());
 		Signal.clearReaders();
 	}
 
