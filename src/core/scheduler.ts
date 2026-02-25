@@ -59,9 +59,6 @@ function clearCursors(node?: IComponent<keyof IntrinsicElements>) {
 function performRender(stateId: string, readers: Set<string>) {
 	if (!app || !renderCallback) return;
 	console.clear();
-
-	resetTree();
-	resetCursor();
 	app.body();
 	renderCallback(stateId, readers, app as IComponent<keyof IntrinsicElements>);
 	postRenderQueue.forEach((fn) => {
@@ -69,6 +66,8 @@ function performRender(stateId: string, readers: Set<string>) {
 	});
 	postRenderQueue.length = 0;
 	clearCursors(app as IComponent<keyof IntrinsicElements>);
+	resetTree();
+	resetCursor();
 }
 
 export function rerender(stateId: string, readers: Set<string>) {
@@ -103,8 +102,6 @@ export function startImmediateMode() {
 	const loop = () => {
 		if (!immediateRunning || !app) return;
 
-		resetTree();
-		resetCursor();
 		app.body();
 		renderCallback?.("", new Set(), app as IComponent<keyof IntrinsicElements>);
 		postRenderQueue.forEach((fn) => {
@@ -112,6 +109,8 @@ export function startImmediateMode() {
 		});
 		postRenderQueue.length = 0;
 		clearCursors(app as IComponent<keyof IntrinsicElements>);
+		resetTree();
+		resetCursor();
 		frameId = requestAnimationFrame(loop);
 	};
 
