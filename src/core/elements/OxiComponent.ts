@@ -27,6 +27,7 @@ export class OxiComponent<K extends keyof IntrinsicElements>
 		this.index = parent ? `${parent.index}.${position}` : "0";
 
 		parent?.down.push(this as IComponent<K>);
+		if (this.view) this.body();
 	}
 
 	body(fn?: (component: this) => void) {
