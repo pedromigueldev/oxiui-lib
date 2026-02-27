@@ -1,4 +1,4 @@
-import type { ContainerState } from "./elements";
+import type { OxiView } from "./elements";
 import { resetCursor } from "./renderer";
 import type { IComponent } from "./types/component";
 import type { IntrinsicElements } from "./types/html";
@@ -10,7 +10,7 @@ type RenderCallback = (
 ) => void;
 
 let running = false;
-let app: ContainerState | null = null;
+let app: OxiView | null = null;
 let renderCallback: RenderCallback | null = null;
 const postRenderQueue: (() => void)[] = [];
 const resetTree = () => {
@@ -20,7 +20,7 @@ const resetTree = () => {
 };
 
 export function initScheduler(
-	App: new () => ContainerState,
+	App: new () => OxiView,
 	renderer: RenderCallback,
 ) {
 	app = new App();

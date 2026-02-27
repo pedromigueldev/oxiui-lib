@@ -1,3 +1,13 @@
 import { intrinsicState } from "./OxiComponent.js";
 
-export class ContainerState extends intrinsicState("div") {}
+export class OxiView extends intrinsicState("div") {
+	constructor() {
+		super();
+		this.body();
+	}
+	View() {}
+
+	override body() {
+		return super.body(() => this.View());
+	}
+}
