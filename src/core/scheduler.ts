@@ -1,4 +1,3 @@
-import type { OxiView } from "./elements";
 import { resetCursor } from "./renderer";
 import type { IComponent } from "./types/component";
 import type { IntrinsicElements } from "./types/html";
@@ -10,20 +9,20 @@ type RenderCallback = (
 ) => void;
 
 let running = false;
-let app: OxiView | null = null;
+let app: (() => IComponent<keyof IntrinsicElements>) | null = null;
+let root: IComponent<keyof IntrinsicElements> | null = null;
 let renderCallback: RenderCallback | null = null;
 const postRenderQueue: (() => void)[] = [];
 const resetTree = () => {
-	if (app?.down) {
-		app.down = [];
-	}
+	if (!root) return;
+	root.down = [];
 };
 
 export function initScheduler(
-	App: new () => OxiView,
+	App: () => IComponent<keyof IntrinsicElements>,
 	renderer: RenderCallback,
 ) {
-	app = new App();
+	app = App;
 	renderCallback = renderer;
 	performRender("", new Set());
 }
@@ -59,23 +58,23 @@ function clearCursors(node?: IComponent<keyof IntrinsicElements>) {
 function performRender(stateId: string, readers: Set<string>) {
 	if (!app || !renderCallback) return;
 	console.clear();
-	app.body();
-	renderCallback(stateId, readers, app as IComponent<keyof IntrinsicElements>);
+	root = app();
+	renderCallback(stateId, readers, root);
 	postRenderQueue.forEach((fn) => {
 		fn();
 	});
 	postRenderQueue.length = 0;
-	clearCursors(app as IComponent<keyof IntrinsicElements>);
+	clearCursors(root);
 }
 
 export function rerender(stateId: string, readers: Set<string>) {
-	if (!renderCallback || !app) return;
+	if (!renderCallback || !app || !root) return;
 	if (running) return;
 
 	const validComponents: Set<string> = new Set();
 
 	readers.forEach((id) => {
-		if (findByIndex(app as IComponent<keyof IntrinsicElements>, id)) {
+		if (findByIndex(root as IComponent<keyof IntrinsicElements>, id)) {
 			validComponents.add(id);
 		}
 	});
@@ -104,13 +103,13 @@ export function startImmediateMode() {
 
 		resetTree();
 		resetCursor();
-		app.body();
-		renderCallback?.("", new Set(), app as IComponent<keyof IntrinsicElements>);
+		root = app();
+		renderCallback?.("", new Set(), root);
 		postRenderQueue.forEach((fn) => {
 			fn();
 		});
 		postRenderQueue.length = 0;
-		clearCursors(app as IComponent<keyof IntrinsicElements>);
+		clearCursors(root);
 		frameId = requestAnimationFrame(loop);
 	};
 
