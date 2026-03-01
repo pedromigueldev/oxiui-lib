@@ -1,6 +1,6 @@
-import { VRow } from "./VRow.js";
+import { intrinsicState } from "./OxiComponent.js";
 
-export class OxiView extends VRow {
+export class OxiView extends intrinsicState("div") {
 	#$rendered = false;
 	constructor(public onInit?: boolean) {
 		super();
