@@ -1,3 +1,4 @@
+import type { OxiView } from "./elements";
 import { resetCursor } from "./renderer";
 import type { IComponent } from "./types/component";
 import type { IntrinsicElements } from "./types/html";
@@ -9,8 +10,8 @@ type RenderCallback = (
 ) => void;
 
 let running = false;
-let app: (() => IComponent<keyof IntrinsicElements>) | null = null;
-let root: IComponent<keyof IntrinsicElements> | null = null;
+let app: (() => OxiView) | null = null;
+let root: OxiView | null = null;
 let renderCallback: RenderCallback | null = null;
 const postRenderQueue: (() => void)[] = [];
 const resetTree = () => {
@@ -18,10 +19,7 @@ const resetTree = () => {
 	root.down = [];
 };
 
-export function initScheduler(
-	App: () => IComponent<keyof IntrinsicElements>,
-	renderer: RenderCallback,
-) {
+export function initScheduler(App: () => OxiView, renderer: RenderCallback) {
 	app = App;
 	renderCallback = renderer;
 	performRender("", new Set());
@@ -59,12 +57,12 @@ function performRender(stateId: string, readers: Set<string>) {
 	if (!app || !renderCallback) return;
 	console.clear();
 	root = app();
-	renderCallback(stateId, readers, root);
+	renderCallback(stateId, readers, root as IComponent<keyof IntrinsicElements>);
 	postRenderQueue.forEach((fn) => {
 		fn();
 	});
 	postRenderQueue.length = 0;
-	clearCursors(root);
+	clearCursors(root as IComponent<keyof IntrinsicElements>);
 }
 
 export function rerender(stateId: string, readers: Set<string>) {
@@ -104,12 +102,16 @@ export function startImmediateMode() {
 		resetTree();
 		resetCursor();
 		root = app();
-		renderCallback?.("", new Set(), root);
+		renderCallback?.(
+			"",
+			new Set(),
+			root as IComponent<keyof IntrinsicElements>,
+		);
 		postRenderQueue.forEach((fn) => {
 			fn();
 		});
 		postRenderQueue.length = 0;
-		clearCursors(root);
+		clearCursors(root as IComponent<keyof IntrinsicElements>);
 		frameId = requestAnimationFrame(loop);
 	};
 
